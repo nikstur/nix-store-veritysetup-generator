@@ -1,0 +1,15 @@
+[package]
+name = "nix-store-veritysetup-generator"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0"
+uuid = "1.7"
+log = "0.4"
+kernlog = "0.3"
+
+[dev-dependencies]
+expect-test = "1.4.1"
