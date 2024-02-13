@@ -30,6 +30,10 @@ in
           "${pkgs.nix-store-veritysetup-generator}/bin/nix-store-veritysetup-generator";
       };
 
+      storePaths = [
+        "${config.boot.initrd.systemd.package}/bin/systemd-escape"
+      ];
+
     };
 
   };
