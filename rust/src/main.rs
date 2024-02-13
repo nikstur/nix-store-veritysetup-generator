@@ -56,7 +56,7 @@ impl fmt::Display for Storehash {
 /// with UUIDs that do contains hyphens.
 fn convert_to_device_uuid(s: &str) -> Result<String> {
     Ok(Uuid::parse_str(s)
-        .context("Failed to parse {s} as an UUID")?
+        .with_context(|| format!("Failed to parse {s} as an UUID"))?
         .hyphenated()
         .to_string())
 }
@@ -64,7 +64,10 @@ fn convert_to_device_uuid(s: &str) -> Result<String> {
 /// Escape a string with `systemd-escape`.
 fn systemd_escape(s: &str) -> Result<String> {
     // Unwrap this because it's only supposed to fail at build time.
-    let mut output = Command::new(SYSTEMD_ESCAPE_PATH).arg(s).output().unwrap();
+    let mut output = Command::new(SYSTEMD_ESCAPE_PATH)
+        .arg(s)
+        .output()
+        .with_context(|| format!("Failed to run systemd-escape: {SYSTEMD_ESCAPE_PATH}"))?;
     if !output.status.success() {
         return Err(anyhow!("systemd-escape failed"));
     }
@@ -81,10 +84,10 @@ fn systemd_escape(s: &str) -> Result<String> {
 fn convert_to_unit(device_path: &str) -> Result<String> {
     let stripped = device_path
         .strip_prefix('/')
-        .context("Failed to srip '/' from {device_path}")?;
+        .with_context(|| format!("Failed to srip '/' from {device_path}"))?;
     Ok(format!(
         "{}.device",
-        systemd_escape(stripped).context("Failed to escape {stripped}")?
+        systemd_escape(stripped).with_context(|| format!("Failed to escape {stripped}"))?
     ))
 }
 
@@ -92,8 +95,10 @@ fn create_service_file(storehash: &Storehash) -> Result<String> {
     let datadevice = storehash.datadevice()?;
     let hashdevice = storehash.hashdevice()?;
 
-    let datadevice_unit = convert_to_unit(&datadevice)?;
-    let hashdevice_unit = convert_to_unit(&hashdevice)?;
+    let datadevice_unit = convert_to_unit(&datadevice)
+        .with_context(|| format!("Failed to convert {datadevice} to systemd unit name."))?;
+    let hashdevice_unit = convert_to_unit(&hashdevice)
+        .with_context(|| format!("Failed to convert {hashdevice} to systemd unit name."))?;
 
     let mut buffer = String::new();
 
@@ -125,7 +130,9 @@ ExecStop={SYSTEMD_VERITYSETUP_PATH} detach nix-store"#
 
 fn generate() -> Result<()> {
     let args: Vec<String> = env::args().collect();
-    let destination_dir = &args.get(1).expect("No command line argument is provided");
+    let destination_dir = &args
+        .get(1)
+        .context("No command line argument is provided")?;
 
     let cmdline = fs::read_to_string("/proc/cmdline")?;
     let maybe_storehash = Storehash::from_cmdline(&cmdline);
@@ -167,7 +174,7 @@ fn main() {
     kernlog::init().expect("Failed to initialize kernel logger");
 
     if let Err(e) = generate() {
-        log::error!("{e}");
+        log::error!("{e:#}");
         std::process::exit(1);
     };
 }
