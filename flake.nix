@@ -86,7 +86,9 @@
 
         inputsFrom = [ config.packages.nix-store-veritysetup-generator ];
 
-        SYSTEMD_VERITYSETUP_PATH = "${pkgs.systemd}/lib/systemd/systemd-veritysetup";
+        # Use a fake path so that the test does not depend on specific Nix
+        # store paths.
+        SYSTEMD_VERITYSETUP_PATH = "systemd-veritysetup";
         SYSTEMD_ESCAPE_PATH = "${pkgs.systemd}/bin/systemd-escape";
 
         RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";

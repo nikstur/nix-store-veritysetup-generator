@@ -215,8 +215,8 @@ mod tests {
             [Service]
             Type=oneshot
             RemainAfterExit=yes
-            ExecStart=/nix/store/3zwz5ywmrrh8m6nqzgw3glq6pilxcphq-systemd-255.2/lib/systemd/systemd-veritysetup attach nix-store /dev/disk/by-partuuid/94821122-dbec-8355-df07-f3670177b0cb /dev/disk/by-partuuid/147683a3-55c0-7da6-a2fb-85313cc02254 94821122dbec8355df07f3670177b0cb147683a355c07da6a2fb85313cc02254
-            ExecStop=/nix/store/3zwz5ywmrrh8m6nqzgw3glq6pilxcphq-systemd-255.2/lib/systemd/systemd-veritysetup detach nix-store
+            ExecStart=systemd-veritysetup attach nix-store /dev/disk/by-partuuid/94821122-dbec-8355-df07-f3670177b0cb /dev/disk/by-partuuid/147683a3-55c0-7da6-a2fb-85313cc02254 94821122dbec8355df07f3670177b0cb147683a355c07da6a2fb85313cc02254
+            ExecStop=systemd-veritysetup detach nix-store
         "#]];
 
         expected_service_file.assert_eq(&actual_service_file);
