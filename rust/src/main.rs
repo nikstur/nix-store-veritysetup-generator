@@ -56,7 +56,7 @@ impl fmt::Display for Storehash {
 /// with UUIDs that do contains hyphens.
 fn convert_to_device_uuid(s: &str) -> Result<String> {
     Ok(Uuid::parse_str(s)
-        .with_context(|| format!("Failed to parse {s} as an UUID"))?
+        .with_context(|| format!("Failed to parse {s} as a UUID"))?
         .hyphenated()
         .to_string())
 }
@@ -84,7 +84,7 @@ fn systemd_escape(s: &str) -> Result<String> {
 fn convert_to_unit(device_path: &str) -> Result<String> {
     let stripped = device_path
         .strip_prefix('/')
-        .with_context(|| format!("Failed to srip '/' from {device_path}"))?;
+        .with_context(|| format!("Failed to strip '/' from {device_path}"))?;
     Ok(format!(
         "{}.device",
         systemd_escape(stripped).with_context(|| format!("Failed to escape {stripped}"))?
