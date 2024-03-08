@@ -132,7 +132,7 @@ fn generator_symlink(
     src_unit: &str,
 ) -> Result<()> {
     let dir = format!("{destination_dir}/{target_unit}.{dependency_type}");
-    fs::create_dir(&dir).with_context(|| format!("Failed to create {dir}"))?;
+    fs::create_dir_all(&dir).with_context(|| format!("Failed to create {dir}"))?;
 
     let symlink = format!("{dir}/{src_unit}");
     std::os::unix::fs::symlink(src_unit, &symlink)
