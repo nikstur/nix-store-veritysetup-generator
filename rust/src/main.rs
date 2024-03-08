@@ -145,8 +145,8 @@ fn generate() -> Result<()> {
         }
     };
 
-    log::debug!(
-        "using nix-store verity data device {} hash device {} hash {}.",
+    log::info!(
+        "Using verity data device {}, hash device {}, and hash {} for nix-store.",
         storehash.datadevice()?,
         storehash.hashdevice()?,
         storehash,
