@@ -2,8 +2,6 @@ use std::env;
 use std::fmt;
 use std::fmt::Write as FmtWrite;
 use std::fs;
-use std::fs::File;
-use std::io::Write;
 use std::process::Command;
 
 use anyhow::{anyhow, Context, Result};
@@ -63,7 +61,6 @@ fn convert_to_device_uuid(s: &str) -> Result<String> {
 
 /// Escape a string with `systemd-escape`.
 fn systemd_escape(s: &str) -> Result<String> {
-    // Unwrap this because it's only supposed to fail at build time.
     let mut output = Command::new(SYSTEMD_ESCAPE_PATH)
         .arg(s)
         .output()
@@ -128,13 +125,29 @@ ExecStop={SYSTEMD_VERITYSETUP_PATH} detach nix-store"#
     Ok(buffer)
 }
 
+fn generator_symlink(
+    destination_dir: &str,
+    target_unit: &str,
+    dependency_type: &str,
+    src_unit: &str,
+) -> Result<()> {
+    let dir = format!("{destination_dir}/{target_unit}.{dependency_type}");
+    fs::create_dir(&dir).with_context(|| format!("Failed to create {dir}"))?;
+
+    let symlink = format!("{dir}/{src_unit}");
+    std::os::unix::fs::symlink(src_unit, &symlink)
+        .with_context(|| format!("Failed to create symlink {symlink}"))?;
+
+    Ok(())
+}
+
 fn generate() -> Result<()> {
     let args: Vec<String> = env::args().collect();
     let destination_dir = &args
         .get(1)
         .context("No command line argument is provided")?;
 
-    let cmdline = fs::read_to_string("/proc/cmdline")?;
+    let cmdline = fs::read_to_string("/proc/cmdline").context("Failed to read /proc/cmdline")?;
     let maybe_storehash = Storehash::from_cmdline(&cmdline);
 
     let storehash = match maybe_storehash {
@@ -146,7 +159,7 @@ fn generate() -> Result<()> {
     };
 
     log::info!(
-        "Using verity data device {}, hash device {}, and hash {} for nix-store.",
+        "Using verity data device {}, hash device {}, and hash {} for nix-store",
         storehash.datadevice()?,
         storehash.hashdevice()?,
         storehash,
@@ -156,15 +169,15 @@ fn generate() -> Result<()> {
 
     // Write service to destination directory
     let service_file_path = format!("{destination_dir}/{SERVICE_NAME}");
-    let mut file = File::create(&service_file_path).context("Failed to create service file")?;
-    file.write_all(service_file.as_bytes())?;
+    fs::write(&service_file_path, service_file.as_bytes())
+        .with_context(|| format!("Failed to create {service_file_path}"))?;
 
-    // Add a symlink to destination directory so that the created unit is pulled into the
-    // transaction
-    fs::create_dir(format!("{destination_dir}/veritysetup.target.requires"))?;
-    std::os::unix::fs::symlink(
-        service_file_path,
-        format!("{destination_dir}/veritysetup.target.requires/{SERVICE_NAME}"),
+    // Add a symlink to the destination directory so that the generated unit is pulled into the transaction
+    generator_symlink(
+        destination_dir,
+        "veritysetup.target",
+        "requires",
+        SERVICE_NAME,
     )?;
 
     Ok(())
