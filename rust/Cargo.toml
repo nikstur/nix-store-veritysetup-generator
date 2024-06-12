@@ -13,3 +13,8 @@ kernlog = "0.3"
 
 [dev-dependencies]
 expect-test = "1.4.1"
+
+[profile.release]
+opt-level = "s"
+panic = "abort"
+lto = true

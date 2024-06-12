@@ -25,6 +25,8 @@ rustPlatform.buildRustPackage {
     export SYSTEMD_VERITYSETUP_PATH="systemd-veritysetup";
   '';
 
+  stripAllList = [ "bin" ];
+
   meta = with lib; {
     description = "Systemd unit generator for a verity protected Nix Store";
     homepage = "https://github.com/nikstur/nix-store-veritysetup-generator";
