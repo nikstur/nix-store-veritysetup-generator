@@ -18,3 +18,4 @@ expect-test = "1.4.1"
 opt-level = "s"
 panic = "abort"
 lto = true
+strip = true
