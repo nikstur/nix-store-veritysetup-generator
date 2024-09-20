@@ -80,6 +80,7 @@
             packages = [
               pkgs.clippy
               pkgs.rustfmt
+              pkgs.cargo-edit
             ];
 
             inputsFrom = [ config.packages.nix-store-veritysetup-generator ];
