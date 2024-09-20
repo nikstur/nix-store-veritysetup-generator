@@ -1,4 +1,9 @@
-{ config, lib, pkgs, ... }:
+{
+  config,
+  lib,
+  pkgs,
+  ...
+}:
 
 let
 
@@ -26,8 +31,7 @@ in
     boot.initrd.systemd = {
 
       contents = {
-        "/etc/systemd/system-generators/nix-store-veritysetup-generator".source =
-          "${pkgs.nix-store-veritysetup-generator}/bin/nix-store-veritysetup-generator";
+        "/etc/systemd/system-generators/nix-store-veritysetup-generator".source = "${pkgs.nix-store-veritysetup-generator}/bin/nix-store-veritysetup-generator";
       };
 
       storePaths = [

@@ -16,10 +16,12 @@ in
 
   config = lib.mkIf cfg.enable {
 
-
     boot.initrd = {
 
-      availableKernelModules = [ "dm_mod" "dm_verity" ];
+      availableKernelModules = [
+        "dm_mod"
+        "dm_verity"
+      ];
 
       # We need LVM for dm-verity to work.
       services.lvm.enable = true;
@@ -41,6 +43,5 @@ in
     };
 
   };
-
 
 }

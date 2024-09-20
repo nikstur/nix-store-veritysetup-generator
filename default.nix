@@ -1,6 +1,7 @@
-{ lib
-, rustPlatform
-, systemd
+{
+  lib,
+  rustPlatform,
+  systemd,
 }:
 
 rustPlatform.buildRustPackage {

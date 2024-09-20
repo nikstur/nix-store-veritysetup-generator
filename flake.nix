@@ -19,72 +19,81 @@
 
   };
 
-  outputs = inputs@{ self, flake-parts, ... }: flake-parts.lib.mkFlake { inherit inputs; } (_: {
+  outputs =
+    inputs@{ self, flake-parts, ... }:
+    flake-parts.lib.mkFlake { inherit inputs; } (_: {
 
-    imports = [
-      inputs.flake-parts.flakeModules.easyOverlay
-      inputs.pre-commit-hooks-nix.flakeModule
-    ];
+      imports = [
+        inputs.flake-parts.flakeModules.easyOverlay
+        inputs.pre-commit-hooks-nix.flakeModule
+      ];
 
-    systems = [
-      "x86_64-linux"
-      "aarch64-linux"
-    ];
+      systems = [
+        "x86_64-linux"
+        "aarch64-linux"
+      ];
 
-    flake.nixosModules = import ./nix/modules;
+      flake.nixosModules = import ./nix/modules;
 
-    perSystem = { config, system, pkgs, ... }: {
+      perSystem =
+        {
+          config,
+          system,
+          pkgs,
+          ...
+        }:
+        {
 
-      _module.args.pkgs = import inputs.nixpkgs {
-        inherit system;
-        overlays = [
-          (_final: _prev: {
-            nix-store-veritysetup-generator = config.packages.nix-store-veritysetup-generator;
-          })
-        ];
-      };
-
-      packages = {
-        nix-store-veritysetup-generator = pkgs.callPackage ./. { };
-        default = config.packages.nix-store-veritysetup-generator;
-      };
-
-      checks = import ./nix/tests { inherit pkgs; };
-
-      pre-commit = {
-        check.enable = true;
-
-        settings = {
-          hooks = {
-            nixpkgs-fmt.enable = true;
-            typos.enable = true;
+          _module.args.pkgs = import inputs.nixpkgs {
+            inherit system;
+            overlays = [
+              (_final: _prev: {
+                nix-store-veritysetup-generator = config.packages.nix-store-veritysetup-generator;
+              })
+            ];
           };
 
-          settings.statix.ignore = [ "sources.nix" ];
+          packages = {
+            nix-store-veritysetup-generator = pkgs.callPackage ./. { };
+            default = config.packages.nix-store-veritysetup-generator;
+          };
+
+          checks = import ./nix/tests { inherit pkgs; };
+
+          pre-commit = {
+            check.enable = true;
+
+            settings = {
+              hooks = {
+                nixfmt-rfc-style.enable = true;
+                typos.enable = true;
+              };
+
+              settings.statix.ignore = [ "sources.nix" ];
+            };
+
+          };
+
+          devShells.default = pkgs.mkShell {
+            shellHook = ''
+              ${config.pre-commit.installationScript}
+            '';
+
+            packages = [
+              pkgs.clippy
+              pkgs.rustfmt
+            ];
+
+            inputsFrom = [ config.packages.nix-store-veritysetup-generator ];
+
+            # Use a fake path so that the test does not depend on specific Nix
+            # store paths.
+            SYSTEMD_VERITYSETUP_PATH = "systemd-veritysetup";
+            SYSTEMD_ESCAPE_PATH = "${pkgs.systemd}/bin/systemd-escape";
+
+            RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
+          };
+
         };
-
-      };
-
-      devShells.default = pkgs.mkShell {
-        shellHook = ''
-          ${config.pre-commit.installationScript}
-        '';
-
-        packages = [
-          pkgs.clippy
-          pkgs.rustfmt
-        ];
-
-        inputsFrom = [ config.packages.nix-store-veritysetup-generator ];
-
-        # Use a fake path so that the test does not depend on specific Nix
-        # store paths.
-        SYSTEMD_VERITYSETUP_PATH = "systemd-veritysetup";
-        SYSTEMD_ESCAPE_PATH = "${pkgs.systemd}/bin/systemd-escape";
-
-        RUST_SRC_PATH = "${pkgs.rustPlatform.rustLibSrc}";
-      };
-
-    };
-  });
+    });
 }
