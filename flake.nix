@@ -68,8 +68,6 @@
                 nixfmt-rfc-style.enable = true;
                 typos.enable = true;
               };
-
-              settings.statix.ignore = [ "sources.nix" ];
             };
 
           };
