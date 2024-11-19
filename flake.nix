@@ -33,7 +33,14 @@
         "aarch64-linux"
       ];
 
-      flake.nixosModules = import ./nix/modules;
+      flake =
+        { config, ... }:
+        {
+          nixosModules = import ./nix/modules;
+          overlays.default = _final: _prev: {
+            nix-store-veritysetup-generator = config.packages.nix-store-veritysetup-generator;
+          };
+        };
 
       perSystem =
         {
@@ -43,15 +50,6 @@
           ...
         }:
         {
-
-          _module.args.pkgs = import inputs.nixpkgs {
-            inherit system;
-            overlays = [
-              (_final: _prev: {
-                nix-store-veritysetup-generator = config.packages.nix-store-veritysetup-generator;
-              })
-            ];
-          };
 
           packages = {
             nix-store-veritysetup-generator = pkgs.callPackage ./. { };
