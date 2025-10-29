@@ -135,7 +135,8 @@ fn generator_symlink(
     fs::create_dir_all(&dir).with_context(|| format!("Failed to create {dir}"))?;
 
     let symlink = format!("{dir}/{src_unit}");
-    std::os::unix::fs::symlink(src_unit, &symlink)
+    let link_target = format!("../{src_unit}");
+    std::os::unix::fs::symlink(link_target, &symlink)
         .with_context(|| format!("Failed to create symlink {symlink}"))?;
 
     Ok(())
