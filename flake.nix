@@ -20,7 +20,7 @@
   };
 
   outputs =
-    inputs@{ self, flake-parts, ... }:
+    inputs@{ flake-parts, ... }:
     flake-parts.lib.mkFlake { inherit inputs; } (_: {
 
       imports = [
@@ -65,7 +65,8 @@
 
             settings = {
               hooks = {
-                nixfmt-rfc-style.enable = true;
+                nixfmt.enable = true;
+                deadnix.enable = true;
                 typos.enable = true;
               };
             };
@@ -74,7 +75,7 @@
 
           devShells.default = pkgs.mkShell {
             shellHook = ''
-              ${config.pre-commit.installationScript}
+              ${config.pre-commit.shellHook}
             '';
 
             packages = [
