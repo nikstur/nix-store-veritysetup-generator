@@ -8,16 +8,13 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    # Use an older ubuntu because starting with 24.04, unprivileged
+    # user namespaces are forbidden via apparmor. The repart builder, however
+    # relies on these.
+    runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@v14
-        with:
-          diagnostic-endpoint: ""
-          source-url: "https://install.lix.systems/lix/lix-installer-x86_64-linux"
-      - uses: DeterminateSystems/magic-nix-cache-action@v8
-        with:
-          diagnostic-endpoint: ""
+      - uses: actions/checkout@v7
+      - uses: samueldr/lix-gha-installer-action@v2026-06-15
       - run: nix flake check --log-format raw-with-logs -L
 
 env:
