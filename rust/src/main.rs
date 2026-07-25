@@ -27,7 +27,7 @@ impl Storehash {
             .find(|&s| s.contains(&format!("{CMDLINE_ARG_NAME}=")));
 
         storehash_arg
-            .and_then(|s| s.split('=').last())
+            .and_then(|s| s.split('=').next_back())
             .map(|s| Self(String::from(s)))
     }
 
