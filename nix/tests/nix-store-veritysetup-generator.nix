@@ -42,7 +42,7 @@
 
       boot.initrd.systemd = {
         enable = true;
-        verity.enable = true;
+        dmVerity.enable = true;
         nix-store-veritysetup-generator.enable = true;
       };
 
