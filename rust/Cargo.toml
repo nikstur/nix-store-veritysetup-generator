@@ -6,8 +6,7 @@ edition = "2024"
 [dependencies]
 anyhow = "1.0.104"
 uuid = "1.24.0"
-log = "0.4.33"
-kernlog = "0.3.1"
+log = { version = "0.4.34", features = ["alloc"] }
 
 [dev-dependencies]
 expect-test = "1.5.1"
@@ -17,3 +16,7 @@ opt-level = "s"
 panic = "abort"
 lto = true
 strip = true
+
+[lints.clippy]
+all = { level = "deny" }
+pedantic = { level = "deny" }

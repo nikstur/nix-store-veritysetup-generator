@@ -1,14 +1,13 @@
+mod kmsg_log;
+
 use std::env;
 use std::fmt;
 use std::fmt::Write as FmtWrite;
 use std::fs;
 use std::process::Command;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use uuid::Uuid;
-
-const SYSTEMD_VERITYSETUP_PATH: &str = std::env!("SYSTEMD_VERITYSETUP_PATH");
-const SYSTEMD_ESCAPE_PATH: &str = std::env!("SYSTEMD_ESCAPE_PATH");
 
 /// The name of the service to create
 const SERVICE_NAME: &str = "systemd-veritysetup@nix-store.service";
@@ -61,10 +60,10 @@ fn convert_to_device_uuid(s: &str) -> Result<String> {
 
 /// Escape a string with `systemd-escape`.
 fn systemd_escape(s: &str) -> Result<String> {
-    let mut output = Command::new(SYSTEMD_ESCAPE_PATH)
+    let mut output = Command::new("systemd-escape")
         .arg(s)
         .output()
-        .with_context(|| format!("Failed to run systemd-escape: {SYSTEMD_ESCAPE_PATH}"))?;
+        .context("Failed to run systemd-escape")?;
     if !output.status.success() {
         return Err(anyhow!("systemd-escape failed"));
     }
@@ -89,6 +88,9 @@ fn convert_to_unit(device_path: &str) -> Result<String> {
 }
 
 fn create_service_file(storehash: &Storehash) -> Result<String> {
+    let systemd_veritysetup_path = std::env::var("SYSTEMD_VERITYSETUP_PATH")
+        .context("Failed to read SYSTEMD_VERITYSETUP_PATH env variable")?;
+
     let datadevice = storehash.datadevice()?;
     let hashdevice = storehash.hashdevice()?;
 
@@ -101,7 +103,7 @@ fn create_service_file(storehash: &Storehash) -> Result<String> {
 
     writeln!(
         &mut buffer,
-        r#"[Unit]
+        r"[Unit]
 Description=Integrity Protection Setup for %I
 DefaultDependencies=no
 IgnoreOnIsolate=true
@@ -110,16 +112,16 @@ Before=blockdev@dev-mapper-%i.target
 Wants=blockdev@dev-mapper-%i.target
 Before=veritysetup.target
 BindsTo={datadevice_unit} {hashdevice_unit}
-After={datadevice_unit} {hashdevice_unit}"#
+After={datadevice_unit} {hashdevice_unit}"
     )?;
 
     writeln!(
         &mut buffer,
-        r#"[Service]
+        r"[Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart={SYSTEMD_VERITYSETUP_PATH} attach nix-store {datadevice} {hashdevice} {storehash}
-ExecStop={SYSTEMD_VERITYSETUP_PATH} detach nix-store"#
+ExecStart={systemd_veritysetup_path} attach nix-store {datadevice} {hashdevice} {storehash}
+ExecStop={systemd_veritysetup_path} detach nix-store"
     )?;
 
     Ok(buffer)
@@ -151,12 +153,9 @@ fn generate() -> Result<()> {
     let cmdline = fs::read_to_string("/proc/cmdline").context("Failed to read /proc/cmdline")?;
     let maybe_storehash = Storehash::from_cmdline(&cmdline);
 
-    let storehash = match maybe_storehash {
-        Some(s) => s,
+    let Some(storehash) = maybe_storehash else {
         // If there is no storehash parameter on the cmdline just do nothing.
-        None => {
-            return Ok(());
-        }
+        return Ok(());
     };
 
     log::info!(
@@ -185,12 +184,12 @@ fn generate() -> Result<()> {
 }
 
 fn main() {
-    kernlog::init().expect("Failed to initialize kernel logger");
+    kmsg_log::init();
 
     if let Err(e) = generate() {
         log::error!("{e:#}");
         std::process::exit(1);
-    };
+    }
 }
 
 #[cfg(test)]
@@ -215,7 +214,7 @@ mod tests {
         .unwrap();
         let actual_service_file = create_service_file(&storehash).unwrap();
 
-        let expected_service_file = expect![[r#"
+        let expected_service_file = expect![[r"
             [Unit]
             Description=Integrity Protection Setup for %I
             DefaultDependencies=no
@@ -231,7 +230,7 @@ mod tests {
             RemainAfterExit=yes
             ExecStart=systemd-veritysetup attach nix-store /dev/disk/by-partuuid/94821122-dbec-8355-df07-f3670177b0cb /dev/disk/by-partuuid/147683a3-55c0-7da6-a2fb-85313cc02254 94821122dbec8355df07f3670177b0cb147683a355c07da6a2fb85313cc02254
             ExecStop=systemd-veritysetup detach nix-store
-        "#]];
+        "]];
 
         expected_service_file.assert_eq(&actual_service_file);
     }
