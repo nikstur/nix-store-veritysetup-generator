@@ -103,7 +103,7 @@ fn create_service_file(storehash: &Storehash) -> Result<String> {
 
     writeln!(
         &mut buffer,
-        r#"[Unit]
+        r"[Unit]
 Description=Integrity Protection Setup for %I
 DefaultDependencies=no
 IgnoreOnIsolate=true
@@ -112,16 +112,16 @@ Before=blockdev@dev-mapper-%i.target
 Wants=blockdev@dev-mapper-%i.target
 Before=veritysetup.target
 BindsTo={datadevice_unit} {hashdevice_unit}
-After={datadevice_unit} {hashdevice_unit}"#
+After={datadevice_unit} {hashdevice_unit}"
     )?;
 
     writeln!(
         &mut buffer,
-        r#"[Service]
+        r"[Service]
 Type=oneshot
 RemainAfterExit=yes
 ExecStart={systemd_veritysetup_path} attach nix-store {datadevice} {hashdevice} {storehash}
-ExecStop={systemd_veritysetup_path} detach nix-store"#
+ExecStop={systemd_veritysetup_path} detach nix-store"
     )?;
 
     Ok(buffer)
@@ -153,12 +153,9 @@ fn generate() -> Result<()> {
     let cmdline = fs::read_to_string("/proc/cmdline").context("Failed to read /proc/cmdline")?;
     let maybe_storehash = Storehash::from_cmdline(&cmdline);
 
-    let storehash = match maybe_storehash {
-        Some(s) => s,
+    let Some(storehash) = maybe_storehash else {
         // If there is no storehash parameter on the cmdline just do nothing.
-        None => {
-            return Ok(());
-        }
+        return Ok(());
     };
 
     log::info!(
@@ -192,7 +189,7 @@ fn main() {
     if let Err(e) = generate() {
         log::error!("{e:#}");
         std::process::exit(1);
-    };
+    }
 }
 
 #[cfg(test)]
@@ -217,7 +214,7 @@ mod tests {
         .unwrap();
         let actual_service_file = create_service_file(&storehash).unwrap();
 
-        let expected_service_file = expect![[r#"
+        let expected_service_file = expect![[r"
             [Unit]
             Description=Integrity Protection Setup for %I
             DefaultDependencies=no
@@ -233,7 +230,7 @@ mod tests {
             RemainAfterExit=yes
             ExecStart=systemd-veritysetup attach nix-store /dev/disk/by-partuuid/94821122-dbec-8355-df07-f3670177b0cb /dev/disk/by-partuuid/147683a3-55c0-7da6-a2fb-85313cc02254 94821122dbec8355df07f3670177b0cb147683a355c07da6a2fb85313cc02254
             ExecStop=systemd-veritysetup detach nix-store
-        "#]];
+        "]];
 
         expected_service_file.assert_eq(&actual_service_file);
     }

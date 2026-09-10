@@ -16,3 +16,7 @@ opt-level = "s"
 panic = "abort"
 lto = true
 strip = true
+
+[lints.clippy]
+all = { level = "deny" }
+pedantic = { level = "deny" }
