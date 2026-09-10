@@ -1,3 +1,5 @@
+mod kmsg_log;
+
 use std::env;
 use std::fmt;
 use std::fmt::Write as FmtWrite;
@@ -185,7 +187,7 @@ fn generate() -> Result<()> {
 }
 
 fn main() {
-    kernlog::init().expect("Failed to initialize kernel logger");
+    kmsg_log::init();
 
     if let Err(e) = generate() {
         log::error!("{e:#}");
