@@ -4,11 +4,8 @@ use std::fmt::Write as FmtWrite;
 use std::fs;
 use std::process::Command;
 
-use anyhow::{anyhow, Context, Result};
+use anyhow::{Context, Result, anyhow};
 use uuid::Uuid;
-
-const SYSTEMD_VERITYSETUP_PATH: &str = std::env!("SYSTEMD_VERITYSETUP_PATH");
-const SYSTEMD_ESCAPE_PATH: &str = std::env!("SYSTEMD_ESCAPE_PATH");
 
 /// The name of the service to create
 const SERVICE_NAME: &str = "systemd-veritysetup@nix-store.service";
@@ -61,10 +58,10 @@ fn convert_to_device_uuid(s: &str) -> Result<String> {
 
 /// Escape a string with `systemd-escape`.
 fn systemd_escape(s: &str) -> Result<String> {
-    let mut output = Command::new(SYSTEMD_ESCAPE_PATH)
+    let mut output = Command::new("systemd-escape")
         .arg(s)
         .output()
-        .with_context(|| format!("Failed to run systemd-escape: {SYSTEMD_ESCAPE_PATH}"))?;
+        .context("Failed to run systemd-escape")?;
     if !output.status.success() {
         return Err(anyhow!("systemd-escape failed"));
     }
@@ -89,6 +86,9 @@ fn convert_to_unit(device_path: &str) -> Result<String> {
 }
 
 fn create_service_file(storehash: &Storehash) -> Result<String> {
+    let systemd_veritysetup_path = std::env::var("SYSTEMD_VERITYSETUP_PATH")
+        .context("Failed to read SYSTEMD_VERITYSETUP_PATH env variable")?;
+
     let datadevice = storehash.datadevice()?;
     let hashdevice = storehash.hashdevice()?;
 
@@ -118,8 +118,8 @@ After={datadevice_unit} {hashdevice_unit}"#
         r#"[Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart={SYSTEMD_VERITYSETUP_PATH} attach nix-store {datadevice} {hashdevice} {storehash}
-ExecStop={SYSTEMD_VERITYSETUP_PATH} detach nix-store"#
+ExecStart={systemd_veritysetup_path} attach nix-store {datadevice} {hashdevice} {storehash}
+ExecStop={systemd_veritysetup_path} detach nix-store"#
     )?;
 
     Ok(buffer)

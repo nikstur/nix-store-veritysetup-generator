@@ -17,10 +17,9 @@ rustPlatform.buildRustPackage {
     lockFile = ./rust/Cargo.lock;
   };
 
-  env = {
-    SYSTEMD_VERITYSETUP_PATH = "${systemd}/lib/systemd/systemd-veritysetup";
-    SYSTEMD_ESCAPE_PATH = "${systemd}/bin/systemd-escape";
-  };
+  nativeCheckInputs = [
+    systemd
+  ];
 
   # Use a fake path in tests so that they are not dependent on specific Nix
   # Store paths and thus don't break on different Nixpkgs invocations. This is

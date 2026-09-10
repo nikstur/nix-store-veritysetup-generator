@@ -6,7 +6,15 @@
   meta.maintainers = with lib.maintainers; [ nikstur ];
 
   nodes.machine =
-    { config, modulesPath, ... }:
+    {
+      config,
+      modulesPath,
+      pkgs,
+      ...
+    }:
+    let
+      json = pkgs.formats.json { };
+    in
     {
 
       imports = [
@@ -44,6 +52,16 @@
         enable = true;
         dmVerity.enable = true;
         nix-store-veritysetup-generator.enable = true;
+        contents = {
+          "/etc/systemd/generator-environment.json".source =
+            json.generate "systemd-generator-environment.json"
+              {
+                SYSTEMD_VERITYSETUP_PATH = "${config.boot.initrd.systemd.package}/lib/systemd/systemd-veritysetup";
+              };
+
+          "/etc/systemd/system-environment-generators/env-generator".source =
+            "${config.system.nixos-init.package}/bin/env-generator";
+        };
       };
 
       virtualisation = {
