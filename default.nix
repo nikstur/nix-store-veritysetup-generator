@@ -4,9 +4,12 @@
   systemd,
 }:
 
+let
+  cargoToml = fromTOML (builtins.readFile ./rust/Cargo.toml);
+in
 rustPlatform.buildRustPackage {
-  pname = "nix-store-veritysetup-generator";
-  version = "0.1.0";
+  pname = cargoToml.package.name;
+  inherit (cargoToml.package) version;
 
   src = ./rust;
 
